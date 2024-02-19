@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load check_package %}
+{% load mathfilters %}
+{% block content %}
+    <!-- Main Start -->
+    <section class="container my-4">
+    	<h1 class="text-center mb-4 section-heading border-bottom pb-2">Plans</h1>
+  <main>
+    <div class="row row-cols-1 row-cols-md-3 mb-3 text-center">
+      {% for p in pricing %}
+        <div class="col">
+          <div class="card mb-4 rounded-3 shadow-sm {% if p.title == 'Pro' %} border-primary {% endif %}">
+            <div class="card-header py-3 {% if p.title == 'Pro' %} text-white bg-primary border-primary {% endif %}">
+              <h4 class="my-0 fw-normal">{{p.title|title}}</h4>
+            </div>
+            <div class="card-body">
+              <h1 class="card-title pricing-card-title">${{p.price}}<small class="text-muted fw-light"> /{{p.validity_days}} Days</small></h1>
+              <p class="text-success">Max Members: {{p.max_members|sub:p.total_members}}</p>
+              <ul class="list-unstyled mt-3 mb-4">
+                <!-- من المودل الاولي هتجيب الاسماء المربوطه بيها في المودل الثانية
+                كلها وبدون ريلاتد -->
+                {% for plan in p.subplanfeature_set.all %}
+                  <li>{{plan.title}}</li>
+                {% endfor %}
+              </ul>
+
+              
+
+              {% if request.user.is_authenticated %}
+                {% check_user_package request.user.id p.id as check_pkg %}
+                {% check_package_validity request.user.id p.id as check_valid %}
+                {% if check_pkg %}
+                  {% if check_valid %}
+                    <a href="#" class="w-100 btn btn-lg btn-danger disabled">Expired</a>
+                  {% else %}
+                    <a href="#" class="w-100 btn btn-lg btn-dark disabled">Purchased</a>
+                  {% endif %}
+                {% else %}
+                  <a href="{% url 'checkout' p.id %}" class="w-100 btn btn-lg btn-outline-primary">Get started</a>
+                {% endif %}
+              {% else %}
+                <a href="{% url 'login' %}" class="w-100 btn btn-lg btn-outline-success">Login To started</a>
+              {% endif %}
+              
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <h2 class="display-6 text-center mb-4">Compare plans</h2>
+
+    <div class="table-responsive">
+      <table class="table text-center">
+        <thead>
+          <tr>
+            <th style="width: 34%;"></th>
+            {% for plan in pricing %}
+              <th style="width: 22%;">{{plan.title|title}}</th>
+            {% endfor %}
+            
+          </tr>
+        </thead>
+        <tbody>
+          <!-- جلب المعلومات من المودل الثانيه -->
+          {% for pf in pfeature %}
+            <tr>
+              <th scope="row" class="text-start">{{pf.title|title}}</th>
+              <!-- من المودل الاولي -->
+              {% for price in pricing %}
+                <!--لو خطة السعر موجوده في اي خصيه من الخواص اعمل صح-->
+                {% if price in pf.subplan.all %}
+                  <td>
+                    <i class="bi bi-check-lg"></i>
+                  </td>
+                {% else %}
+                  <td>
+                    <i class="bi bi-x text-danger" style="font-size: xx-large;"></i>
+                  </td>
+                {% endif %}
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </main>
+</section>
+    <!-- End -->
+{% endblock %}

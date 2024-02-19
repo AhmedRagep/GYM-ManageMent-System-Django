@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% block content %}
+<style type="text/css">
+	.marked{
+		display: none;
+	}
+</style>
+    <!-- Main Start -->
+    <main>
+		<!-- Services -->
+		<section class="container my-4">
+			<div class="row">
+				<div class="col-3">
+					{% include 'user/left-sidebar.html' %}
+				</div>
+				<div class="col-9">
+          <!-- totalunread يتم استخدامها في جافا لجلب الرسائل غير المقروئه -->
+					<h3 class="mb-4 border-bottom pb-1">Notifications <span class="badge bg-primary totalunread"></span></h3>
+					<span class="ajaxRes"></span>
+					<ul class="list-group notif-list">
+						
+					</ul>
+				</div>
+			</div>
+		</section>
+		<!-- End -->
+    </main>
+    <!-- End -->
+
+<script type="text/javascript">
+  // عند تحميل الصفحة، يتم إخفاء عناصر الفهرس المحددة بالفئة ".ajaxRes"
+  // ويتم تنفيذ الكود داخل دالة $(document).ready()
+	$(document).ready(function(){
+		$(".ajaxRes").hide();
+
+    // يقوم بتكرار إرسال طلب AJAX كل 5 ثواني للحصول على الإشعارات
+		setInterval(function(){
+			$.ajax({
+        // رابط الاشعارات
+				url:"{% url 'get_notifs' %}",
+        // استخدام جاسون
+				dataType:'json',
+
+        // قبل إرسال الطلب، يتم إظهار عنصر ".ajaxRes" وتعيين نص "Loading..."
+				beforeSend:function(){
+					$(".ajaxRes").show();
+					$(".ajaxRes").text('Loading...');
+				},
+
+        // عند النجاح 
+				success:function(res){
+					_html='';
+          // تحديث عدد الإشعارات الغير مقروءة في واجهة المستخدم
+					$(".totalunread").text(res.totalUnread);
+
+          // إنشاء عناصر القائمة بناءً على البيانات المسترجعة من الطلب
+					// d تم تمرير المتغير داتا من الفيو وهو الان في 
+          $.each(res.data,function(index,d){
+            // لو الاشعار مقرؤ
+						if(d.notifStatus==true){
+              // هتضيف الاشعار علي انه مقروء بداخل هذا المتغير
+							_html+='<li class="list-group-item list'+d.pk+'">'+d.not_detail+'<button data-index="'+d.pk+'" data-notif="'+d.pk+'" class="btn btn-sm btn-secondary float-end markreadbtn markreadbtn'+d.pk+'"" style="display:none;">MarkRead</button><button class="float-end btn btn-success btn-sm marked'+d.pk+'"><i class="bi bi-check-square"></i></button></li>';
+						// لو مش مقروئه
+            }else{
+              // هتضيف الاشعار علي انه مش مقروء
+							_html+='<li class="list-group-item bg-light list'+d.pk+'">'+d.not_detail+'<button data-index="'+d.pk+'" data-notif="'+d.pk+'" class="btn btn-sm btn-secondary float-end markreadbtn markreadbtn'+d.pk+'"">MarkRead</button><button class="float-end btn btn-success btn-sm marked marked'+d.pk+'"><i class="bi bi-check-square"></i></button></li>';
+						}
+
+					});
+          // اضافة الليست اللي تطلع في العرض
+					$(".notif-list").html(_html);
+          // اخفاء التحميل
+					$(".ajaxRes").hide();
+				}
+			});
+		},5000);
+
+		// قسم تحديد الإشعار كمقروء
+
+    // عند الضغط علي الزر اللذي يحتوي علي هذا الكلاس وهو 
+    // موجود في الليست اللي فوق
+		$(document).on("click",".markreadbtn",function(){
+      // يتم جلب هاذين المتغيرين من الليست اللي فوق
+			var _index=$(this).attr('data-index');
+			var _notif=$(this).attr('data-notif');
+
+			$.ajax({
+        // عند الضغط علي الزر يجعل الرسالة مقروئه
+				url:"{% url 'mark_read_notif' %}",
+				data:{
+          // الاسم هذا هوا موجود في الفيو وهو لجلب رقم الرسالة 
+					notif:_notif
+				},
+				dataType:'json',
+				beforeSend:function(){
+					
+				},
+        // عند الاتمام
+				success:function(res){
+          // true البول متغير  من الفيو يحتوي علي 
+					if(res.bool==true){
+            // ازالة هذه الكلاس للون الخلفيه من الليست صاحبه الرقم
+						$(".list"+_index).removeClass('bg-light');
+            // ازالة زر الفقراءه
+						$(".markreadbtn"+_index).hide();
+            // اظهار زر انه مقروؤ
+						$(".marked"+_index).show();
+					}
+				}
+			});
+		});
+		// End
+
+	});
+</script>
+
+{% endblock %}

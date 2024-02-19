@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+    <!-- Main Start -->
+    <main>
+		<!-- Services -->
+		<section class="container my-4">
+			<h1 class="text-center mb-4 section-heading border-bottom pb-2">Checkout</h1>
+				<table class="table table-bordered">
+					<thead class="table-warning">
+						<tr>
+							<th>Plan</th>
+							<th>Plan Detail</th>
+							<th>Payment For</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>
+								<table class="table-bordered table">
+									<tr>
+										<th>Name</th>
+										<td>{{plan.title}}</td>
+									</tr>
+									<tr>
+										<th>Price</th>
+										<td>${{plan.price}}</td>
+									</tr>
+									<tr>
+										<th>Max Member</th>
+										<td>{{plan.max_members}}</td>
+									</tr>
+									<tr>
+										<th>Already Registered</th>
+										<td>15</td>
+									</tr>
+									<tr>
+										<th>Balance Seats</th>
+										<td>15</td>
+									</tr>
+								</table>
+							</td>
+							<td>
+								<ul class="list-unstyled">
+					              <!-- من المودل الاولي هتجيب الاسماء المربوطه بيها في المودل الثانية
+                        كلها وبدون ريلاتد -->
+                        {% for plan in plan.subplanfeature_set.all %}
+                          <li>{{plan.title}}</li>
+                        {% endfor %}
+					            </ul>
+							</td>
+							<td>
+								<table class="table table-bordered">
+                  {% for disc in plan.totaldiscount_set.all %}
+                    <tr>
+                      <td><input data-planprice="{{plan.price}}" data-discount="{{disc.total_discount}}" type="radio" id="validity{{disc.id}}" name="validity" class="select-validity" value="{{disc.total_months}}" /></td>
+                      <th><label for="validity{{disc.id}}">{{disc.total_months}} Month</label></th>
+                      <td>{{disc.total_discount}}%</td>
+                    </tr>
+                  {% endfor %}
+								</table>
+							</td>
+						</tr>
+					</tbody>
+					<tfoot class="table-info">
+						<tr>
+							<td></td>
+							<th>Total Amount</th>
+							<td><b>$<span class="totalAmount">{{plan.price}}</span></b></td>
+						</tr>
+						<tr>
+							<td colspan="2"></td>
+              <form method="post" action="{% url 'checkout_session' plan.id %}">
+                {% csrf_token %}
+                <td><input type="submit" value="Proceed to Payment" class="btn btn-primary" /></td>
+              </form>
+						</tr>
+					</tfoot>
+				</table>
+		</section>
+		<!-- End -->
+    </main>
+    <!-- End -->
+
+<script type="text/javascript">
+  $(document).ready(function(){
+    $(".select-validity").on('click',function(){
+      var _price=$(this).attr('data-planprice');
+      var _priceValid=$(this).val();
+      var _priceDiscount=$(this).attr('data-discount');
+      var checkoutForm = document.getElementById("checkoutForm");
+      // 150*3
+      var _total = _price*_priceValid;
+      if(_priceDiscount>0){
+        var _calDisc=_total*_priceDiscount/100;
+        _calDisc=_total-_calDisc;
+      }else{
+        _calDisc=_price
+      }
+      
+      $(".totalAmount").text(_calDisc);
+      
+    })
+  });
+</script>
+
+{% endblock %}
